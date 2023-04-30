@@ -5,7 +5,11 @@
 await import("./src/env.mjs");
 
 /** @type {import("next").NextConfig} */
-const config = {
+import nextPWA from "next-pwa";
+const withPWA=nextPWA({
+  dest: 'public'
+});
+const config = withPWA({
   reactStrictMode: true,
 
   /**
@@ -21,5 +25,5 @@ const config = {
   images: {
     domains: ["cdn.discordapp.com", "cdn.discord.com", "media.discordapp.net"],
   },
-};
+});
 export default config;

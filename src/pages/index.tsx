@@ -5,8 +5,11 @@ import { signIn, signOut, useSession } from "next-auth/react";
 
 import { api } from "~/utils/api";
 import Image from "next/image";
+import { type FormEvent, useState } from "react";
 
 const Home: NextPage = () => {
+  const [title, setTitle] = useState<string>("");
+
   const hello = api.example.getAll.useQuery();
   const secretHello = api.example.getSecretAll.useQuery("secret");
   const allTodos = api.example.getAllTodos.useQuery();
@@ -33,7 +36,38 @@ const Home: NextPage = () => {
       utils.example.getAllTodos.setData(undefined, context?.previousTodos);
     },
   });
+  const createTodo = api.example.createTodo.useMutation({
+    async onMutate(title) {
+      await utils.example.getAllTodos.cancel();
+      const previousTodos = utils.example.getAllTodos.getData();
+      //optimistic update
+      utils.example.getAllTodos.setData(undefined, (prev) => {
+        return prev?.concat({
+          id: Math.random().toString(),
+          title,
+          userId: Math.random().toString(),
+          completed: false,
+        });
+      });
+      return { previousTodos };
+    },
+    async onSuccess() {
+      await utils.example.getAllTodos.refetch();
+    },
+    onError(error, variables, context) {
+      utils.example.getAllTodos.setData(undefined, context?.previousTodos);
+    },
+  });
+
   const { data: session } = useSession();
+
+  function submitHandler(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (title === "") return;
+    createTodo.mutate(title);
+    setTitle("");
+  }
+
   return (
     <>
       <Head>
@@ -93,6 +127,15 @@ const Home: NextPage = () => {
                 ))}
               </ul>
             )}
+            <form onSubmit={submitHandler}>
+              <input
+                type="text"
+                onChange={(e) => setTitle(e.target.value)}
+                className="text-black"
+                value={title}
+              />
+              <button type="submit" className="text-black" />
+            </form>
           </>
         )}
       </main>

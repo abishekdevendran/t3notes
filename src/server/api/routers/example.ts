@@ -43,4 +43,13 @@ export const exampleRouter = createTRPCRouter({
       return todo;
     });
   }),
+  createTodo: protectedProcedure.input(z.string()).mutation(({ input, ctx }) => {
+    // get todos from prisma
+    return ctx.prisma.todo.create({
+      data: {
+        userId: ctx.session.user.id,
+        title: input,
+      },
+    });
+  }),
 });
