@@ -21,35 +21,37 @@ export const exampleRouter = createTRPCRouter({
       },
     });
   }),
-  toggleTodo: protectedProcedure.input(z.string()).mutation(({ input, ctx }) => {
-    // get todos from prisma
-    return ctx.prisma.$transaction(async (tx) => {
-      let todo = await tx.todo.findUnique({
+  toggleTodo: protectedProcedure
+    .input(z.object({ id: z.string(), state: z.boolean() }))
+    .mutation(({ input, ctx }) => {
+      // get todos from prisma
+      return ctx.prisma.todo.update({
         where: {
-          id: input,
-        },
-      });
-      if (!todo) {
-        return null;
-      }
-      todo = await tx.todo.update({
-        where: {
-          id: input,
+          id: input.id,
         },
         data: {
-          completed: !todo.completed,
+          completed: !input.state,
         },
       });
-      return todo;
-    });
-  }),
-  createTodo: protectedProcedure.input(z.string()).mutation(({ input, ctx }) => {
-    // get todos from prisma
-    return ctx.prisma.todo.create({
-      data: {
-        userId: ctx.session.user.id,
-        title: input,
-      },
-    });
-  }),
+    }),
+  createTodo: protectedProcedure
+    .input(z.string())
+    .mutation(({ input, ctx }) => {
+      // get todos from prisma
+      return ctx.prisma.todo.create({
+        data: {
+          userId: ctx.session.user.id,
+          title: input,
+        },
+      });
+    }),
+  deleteTodo: protectedProcedure
+    .input(z.string())
+    .mutation(({ input, ctx }) => {
+      return ctx.prisma.todo.delete({
+        where: {
+          id: input,
+        },
+      });
+    }),
 });
